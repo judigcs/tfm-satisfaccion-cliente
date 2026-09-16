@@ -11,8 +11,8 @@ a cualquier conjunto de reseñas.
 
 | Archivo | Descripción |
 |---|---|
-| `TFM_Judith_Garcia.ipynb` | Análisis completo: carga, exploración, análisis de aspectos por industria, modelado, evaluación e interpretabilidad |
-| `TFM_Judith_Garcia.html` | El mismo notebook ejecutado, en formato HTML (anexo de código) |
+| `TFM_notebook.ipynb` | Análisis completo: carga, exploración, análisis de aspectos por industria, modelado, evaluación e interpretabilidad |
+| `TFM_notebook.html` | El mismo notebook ejecutado, en formato HTML (anexo de código) |
 | `herramienta.html` | Herramienta de diagnóstico. Se abre en el navegador |
 | `modelo_web.json` | Vocabulario, pesos IDF y coeficientes del modelo, exportados para la herramienta |
 | `modelo.pkl` / `vectorizador.pkl` | Modelo y vectorizador serializados (scikit-learn) |

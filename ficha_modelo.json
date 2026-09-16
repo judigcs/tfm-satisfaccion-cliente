@@ -1,0 +1,12 @@
+{
+  "fecha_entrenamiento": "2026-09-16 07:18",
+  "n_resenas_entrenamiento": 160000,
+  "parametros": {
+    "C": "1",
+    "class_weight": "balanced"
+  },
+  "exactitud_test": 0.8614,
+  "f1_test": 0.8321,
+  "auc_test": 0.9322,
+  "n_terminos": 50000
+}

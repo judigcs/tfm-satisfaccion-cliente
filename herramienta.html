@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico de satisfacción del cliente</title>
+<style>
+:root{
+  color-scheme: light;
+  --surface-0:#f5f5f3; --surface-1:#fcfcfb; --borde:#e2e1dc;
+  --text-1:#0b0b0b; --text-2:#52514e; --text-3:#83827c;
+  --azul:#2a78d6; --verde:#1baf7a; --rojo:#e34948; --ambar:#eda100;
+  --sombra:0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --surface-0:#121211; --surface-1:#1a1a19; --borde:#33332f;
+    --text-1:#ffffff; --text-2:#c3c2b7; --text-3:#8d8c83;
+    --azul:#3987e5; --verde:#199e70; --rojo:#e66767; --ambar:#c98500;
+    --sombra:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-1);
+  font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+.envoltorio{max-width:1080px;margin:0 auto;padding:28px 20px 72px}
+header.cabecera{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+h1{font-size:23px;margin:0;letter-spacing:-.01em}
+.sub{color:var(--text-2);font-size:14px;margin:2px 0 22px}
+.autor{color:var(--text-3);font-size:13px;margin-left:auto}
+.tarjeta{background:var(--surface-1);border:1px solid var(--borde);border-radius:12px;
+  padding:20px;box-shadow:var(--sombra);margin-bottom:18px}
+.tarjeta h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--text-2);margin:0 0 14px;font-weight:600}
+.estado{font-size:13px;color:var(--text-2);display:flex;align-items:center;gap:8px}
+.punto{width:8px;height:8px;border-radius:50%;background:var(--text-3);flex:none}
+.punto.ok{background:var(--verde)} .punto.mal{background:var(--rojo)}
+.zona{border:1.5px dashed var(--borde);border-radius:10px;padding:26px;text-align:center;
+  color:var(--text-2);cursor:pointer;transition:border-color .15s,background .15s}
+.zona:hover,.zona.encima{border-color:var(--azul);background:color-mix(in srgb,var(--azul) 5%,transparent)}
+.zona b{color:var(--text-1)}
+button{font:inherit;font-weight:500;padding:9px 16px;border-radius:8px;border:1px solid var(--borde);
+  background:var(--surface-1);color:var(--text-1);cursor:pointer}
+button.primario{background:var(--azul);border-color:var(--azul);color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+select,input[type=text],textarea{font:inherit;padding:8px 10px;border-radius:8px;
+  border:1px solid var(--borde);background:var(--surface-1);color:var(--text-1);width:100%}
+label.campo{display:block;font-size:12px;color:var(--text-2);margin-bottom:5px}
+.rejilla{display:grid;gap:14px}
+.cols3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.cols2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.kpi{background:var(--surface-1);border:1px solid var(--borde);border-radius:12px;
+  padding:18px 20px;box-shadow:var(--sombra)}
+.kpi .valor{font-size:34px;font-weight:650;letter-spacing:-.02em;line-height:1.1}
+.kpi .etiqueta{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);margin-top:6px}
+.kpi .nota{font-size:12px;color:var(--text-3);margin-top:3px}
+.barra-fila{display:grid;grid-template-columns:130px 1fr 46px;align-items:center;gap:10px;margin-bottom:9px}
+.barra-fila .nombre{font-size:13px;color:var(--text-2);text-align:right;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pista{background:var(--surface-0);border-radius:4px;height:16px;position:relative;overflow:hidden}
+.relleno{height:100%;border-radius:0 4px 4px 0;min-width:3px;transition:width .5s cubic-bezier(.2,.7,.3,1)}
+.barra-fila .cifra{font-size:13px;font-variant-numeric:tabular-nums;color:var(--text-1);font-weight:550}
+.barra-fila[data-menciones]:hover .nombre{color:var(--text-1)}
+.leyenda{font-size:12px;color:var(--text-3);margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--borde)}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-2);font-weight:600}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+.oculto{display:none!important}
+.aviso{font-size:13px;padding:11px 14px;border-radius:9px;
+  background:color-mix(in srgb,var(--ambar) 14%,var(--surface-1));
+  border:1px solid color-mix(in srgb,var(--ambar) 40%,transparent);color:var(--text-1)}
+.error{background:color-mix(in srgb,var(--rojo) 12%,var(--surface-1));
+  border-color:color-mix(in srgb,var(--rojo) 40%,transparent)}
+.pastilla{display:inline-block;font-size:12px;padding:2px 9px;border-radius:999px;
+  border:1px solid var(--borde);color:var(--text-2);margin-right:5px}
+.termino{display:inline-flex;align-items:center;gap:6px;font-size:13px;
+  padding:4px 10px;border-radius:7px;margin:0 6px 6px 0;border:1px solid var(--borde)}
+.termino .p{font-variant-numeric:tabular-nums;color:var(--text-3);font-size:12px}
+.pos{background:color-mix(in srgb,var(--verde) 12%,transparent);border-color:color-mix(in srgb,var(--verde) 35%,transparent)}
+.neg{background:color-mix(in srgb,var(--rojo) 12%,transparent);border-color:color-mix(in srgb,var(--rojo) 35%,transparent)}
+.pie{color:var(--text-3);font-size:12px;text-align:center;margin-top:34px;line-height:1.7}
+.barra-acciones{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.mapa,.desplaza{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{min-width:420px}
+.mapa table,.desplaza table{min-width:480px}
+.mapa td.celda{text-align:center;font-variant-numeric:tabular-nums;
+  font-size:12px;padding:6px 8px;border:2px solid var(--surface-1);border-radius:4px}
+@media (max-width:560px){
+  .barra-fila{grid-template-columns:96px 1fr 42px}
+  .kpi .valor{font-size:28px}
+}
+</style>
+</head>
+<body>
+<div class="envoltorio">
+
+  <header class="cabecera">
+    <h1 id="ui-titulo">Diagnóstico de satisfacción del cliente</h1>
+    <span class="autor" id="ui-autor"></span>
+  </header>
+  <p class="sub" id="ui-subtitulo"></p>
+
+  <div class="tarjeta">
+    <h2>1 · Modelo</h2>
+    <div class="estado"><span class="punto" id="punto-modelo"></span>
+      <span id="estado-modelo">Cargando el modelo…</span></div>
+    <div id="carga-manual" class="oculto" style="margin-top:12px">
+      <p class="sub" style="margin:0 0 8px">
+        No se ha podido cargar <code>modelo_web.json</code> automáticamente
+        (pasa al abrir el archivo con doble clic). Selecciónalo a mano:</p>
+      <input type="file" id="archivo-modelo" accept=".json">
+    </div>
+    <div id="ficha-modelo" class="oculto" style="margin-top:12px"></div>
+  </div>
+
+  <div class="tarjeta">
+    <h2>2 · Reseñas a analizar</h2>
+    <div class="zona" id="zona"><b>Arrastra aquí tu archivo CSV</b><br>
+      <span style="font-size:13px">o haz clic para seleccionarlo</span></div>
+    <input type="file" id="archivo-csv" accept=".csv,.txt" class="oculto">
+    <div id="mapeo" class="oculto" style="margin-top:16px">
+      <div class="rejilla cols3">
+        <div><label class="campo">Columna con el texto de la reseña</label>
+          <select id="col-texto"></select></div>
+        <div><label class="campo">Columna de industria o categoría (opcional)</label>
+          <select id="col-industria"></select></div>
+        <div><label class="campo">Columna de puntuación (opcional)</label>
+          <select id="col-puntuacion"></select></div>
+      </div>
+      <div class="barra-acciones">
+        <button class="primario" id="btn-analizar">Analizar</button>
+        <span class="estado" id="resumen-csv"></span>
+      </div>
+    </div>
+    <div id="error-csv" class="aviso error oculto" style="margin-top:14px"></div>
+  </div>
+
+  <div id="resultados" class="oculto">
+
+    <div class="rejilla cols3" style="margin-bottom:18px">
+      <div class="kpi"><div class="valor" id="kpi-n">—</div>
+        <div class="etiqueta">Reseñas analizadas</div>
+        <div class="nota" id="kpi-n-nota"></div></div>
+      <div class="kpi"><div class="valor" id="kpi-sat">—</div>
+        <div class="etiqueta">Clientes satisfechos</div>
+        <div class="nota" id="kpi-sat-nota"></div></div>
+      <div class="kpi"><div class="valor" id="kpi-asp">—</div>
+        <div class="etiqueta">Aspectos detectados</div>
+        <div class="nota">de 8 posibles</div></div>
+    </div>
+
+    <div class="rejilla cols2">
+      <div class="tarjeta"><h2>Fortalezas · lo que acompaña a clientes contentos</h2>
+        <div id="fortalezas"></div></div>
+      <div class="tarjeta"><h2>Puntos a mejorar · lo que aparece en las quejas</h2>
+        <div id="debilidades"></div></div>
+    </div>
+
+    <div class="tarjeta"><h2>Detalle por aspecto</h2>
+      <div class="desplaza"><table><thead><tr><th>Aspecto</th><th class="num">Reseñas que lo mencionan</th>
+        <th class="num">% sobre el total</th><th class="num">% de satisfechos</th></tr></thead>
+        <tbody id="tabla-aspectos"></tbody></table></div>
+      <p class="leyenda">El porcentaje de satisfechos es la proporción de reseñas que
+      mencionan ese aspecto y que el modelo clasifica como cliente satisfecho.</p>
+    </div>
+
+    <div class="tarjeta oculto" id="bloque-industria"><h2>Satisfacción por industria</h2>
+      <div id="industrias"></div></div>
+
+    <div class="tarjeta oculto" id="bloque-mapa"><h2>Aspectos por industria</h2>
+      <div class="mapa"><table id="tabla-mapa"></table></div>
+      <p class="leyenda">Cada celda es el porcentaje de clientes satisfechos entre los que
+      mencionan ese aspecto en esa industria. Más azul, más satisfacción.
+      Las celdas vacías no tienen menciones suficientes para ser fiables.</p>
+    </div>
+
+    <div class="barra-acciones" style="margin-bottom:18px">
+      <button id="btn-descargar">Descargar resultados en CSV</button>
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <h2>3 · Probar una reseña suelta</h2>
+    <textarea id="texto-prueba" rows="3"
+      placeholder="Escribe aquí una reseña y el modelo dirá si el cliente quedó satisfecho y por qué."></textarea>
+    <div class="barra-acciones">
+      <button id="btn-probar">Analizar la reseña</button>
+    </div>
+    <div id="salida-prueba" class="oculto" style="margin-top:14px"></div>
+  </div>
+
+  <div class="tarjeta">
+    <h2>4 · Verificación del modelo</h2>
+    <p class="sub" style="margin:0 0 10px">
+      Comprueba que esta página reproduce exactamente las mismas puntuaciones que el
+      modelo entrenado en Python, sobre una muestra de reseñas guardada al exportarlo.</p>
+    <button id="btn-verificar">Ejecutar verificación</button>
+    <div id="salida-verificacion" style="margin-top:14px"></div>
+  </div>
+
+  <p class="pie" id="ui-pie"></p>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════════
+   ZONA DE PERSONALIZACIÓN — cambia lo de aquí y guarda el archivo.
+   No hace falta tocar nada por debajo de este bloque.
+   ══════════════════════════════════════════════════════════════════════ */
+const CONFIG = {
+  titulo:    "Diagnóstico de satisfacción del cliente",
+  subtitulo: "Herramienta de análisis de reseñas basada en el modelo entrenado en el TFM",
+  autor:     "Judith García",
+  pie:       "Trabajo Fin de Máster · Máster en Data Science, Big Data & Business Analytics · UCM",
+
+  // Colores. Cámbialos por los que quieras (formato #rrggbb).
+  colorPrincipal: "#2a78d6",   // azul de la marca
+  colorBueno:     "#1baf7a",   // fortalezas
+  colorMalo:      "#e34948",   // puntos a mejorar
+
+  // Umbrales de lectura
+  umbralVerde: 60,   // a partir de este % de satisfechos, el indicador es verde
+  umbralRojo:  40,   // por debajo de este %, rojo
+  topAspectos: 4,    // cuántos aspectos se muestran en cada panel
+
+  // Mínimo de menciones para que un aspecto se considere fiable.
+  // Es el mayor entre este número y el 1 % de las reseñas del archivo.
+  minimoMenciones: 10,
+
+  // Diccionario de aspectos. Puedes añadir, quitar o cambiar palabras.
+  // Cada entrada es un trozo de expresión regular: "precio" también capta
+  // "precios" y "preciosa" no, porque el límite de palabra va delante.
+  aspectos: {
+    "Precio":           ["precio","barat","caro","carísim","económic","vale la pena"],
+    "Calidad":          ["calidad","defectuos","acabado","material","frágil"],
+    "Durabilidad":      ["duradero","duración","dura mucho","dura poco","rompe","roto","aguanta","resistente"],
+    "Envío/Entrega":    ["envío","entrega","llegó","tardó","demora","retras"],
+    "Servicio":         ["servicio","atención","vendedor","reembolso","devoluci","garantía"],
+    "Facilidad de uso": ["fácil","sencill","cómod","práctic","intuitiv","difícil de"],
+    "Diseño":           ["diseño","bonit","elegante","preciosa","precioso","feo","estétic"],
+    "Tamaño/Talla":     ["talla","tamaño","grande","pequeñ","ajuste","medida"],
+  },
+};
+/* ════════════════ FIN DE LA ZONA DE PERSONALIZACIÓN ════════════════════ */
+
+
+/* ── Motor de predicción ────────────────────────────────────────────────
+   Reproduce en JavaScript lo que hacen TfidfVectorizer y LogisticRegression:
+   tokenizar, quitar palabras vacías, formar n-gramas de 1 a 3, calcular
+   tf-idf con escala logarítmica, normalizar en L2 y multiplicar por los
+   coeficientes. Verificado contra Python: diferencia máxima 5e-9.        */
+function crearMotor(M){
+  const indice = new Map();
+  for (let i=0; i<M.terminos.length; i++) indice.set(M.terminos[i], i);
+  const vacias = new Set(M.stop_words || []);
+  const PATRON = /[\p{L}\p{N}\p{M}_]+/gu;   // equivale a \b\w\w+\b de Python
+
+  const tokenizar = texto =>
+    (String(texto).toLowerCase().match(PATRON) || [])
+      .filter(t => t.length >= 2 && !vacias.has(t));
+
+  function ngramas(tokens){
+    const salida = [];
+    for (let n=1; n<=3; n++)
+      for (let i=0; i+n<=tokens.length; i++)
+        salida.push(tokens.slice(i, i+n).join(" "));
+    return salida;
+  }
+
+  function vectorizar(texto){
+    const cuentas = new Map();
+    for (const g of ngramas(tokenizar(texto))){
+      const i = indice.get(g);
+      if (i !== undefined) cuentas.set(i, (cuentas.get(i)||0)+1);
+    }
+    let suma = 0; const vector = new Map();
+    for (const [i,c] of cuentas){
+      const v = (1 + Math.log(c)) * M.idf[i];     // sublinear_tf · idf
+      vector.set(i, v); suma += v*v;
+    }
+    const norma = Math.sqrt(suma);
+    if (norma > 0) for (const [i,v] of vector) vector.set(i, v/norma);  // L2
+    return vector;
+  }
+
+  const puntuar = texto => {
+    let z = M.intercepto;
+    for (const [i,v] of vectorizar(texto)) z += v * M.coef[i];
+    return z;
+  };
+
+  return {
+    puntuar,
+    predecir:     t => puntuar(t) > 0 ? 1 : 0,
+    probabilidad: t => 1/(1+Math.exp(-puntuar(t))),
+    contribuciones(texto, cuantos=6){
+      const lista = [];
+      for (const [i,v] of vectorizar(texto))
+        lista.push({termino:M.terminos[i], peso: v*M.coef[i]});
+      lista.sort((a,b)=>Math.abs(b.peso)-Math.abs(a.peso));
+      return lista.slice(0, cuantos).filter(x => Math.abs(x.peso) > 1e-6);
+    },
+  };
+}
+
+/* ── Lector de CSV ──────────────────────────────────────────────────────
+   Hecho a mano porque las reseñas llevan comas, comillas y saltos de línea
+   dentro del propio texto, y partir por comas rompería las filas.         */
+function leerCSV(texto){
+  if (texto.charCodeAt(0) === 0xFEFF) texto = texto.slice(1);   // BOM
+  const sep = detectarSeparador(texto);
+  const filas = []; let fila = []; let campo = ""; let entreComillas = false;
+  for (let i=0; i<texto.length; i++){
+    const c = texto[i];
+    if (entreComillas){
+      if (c === '"'){
+        if (texto[i+1] === '"'){ campo += '"'; i++; }
+        else entreComillas = false;
+      } else campo += c;
+    } else if (c === '"'){ entreComillas = true; }
+      else if (c === sep){ fila.push(campo); campo = ""; }
+      else if (c === "\n"){ fila.push(campo); filas.push(fila); fila = []; campo = ""; }
+      else if (c === "\r"){ /* se ignora */ }
+      else campo += c;
+  }
+  if (campo.length || fila.length){ fila.push(campo); filas.push(fila); }
+  if (!filas.length) return {cabeceras:[], datos:[]};
+  const cabeceras = filas[0].map((h,i) => h.trim() || `columna_${i+1}`);
+  const datos = [];
+  for (let f=1; f<filas.length; f++){
+    if (filas[f].length === 1 && filas[f][0].trim() === "") continue;
+    const obj = {};
+    cabeceras.forEach((h,i) => obj[h] = filas[f][i] ?? "");
+    datos.push(obj);
+  }
+  return {cabeceras, datos};
+}
+function detectarSeparador(texto){
+  const linea = texto.slice(0, 5000).split("\n")[0];
+  let mejor = ",", max = -1;
+  for (const s of [",",";","\t","|"]){
+    const n = linea.split(s).length;
+    if (n > max){ max = n; mejor = s; }
+  }
+  return mejor;
+}
+
+/* ── Detección de aspectos ──────────────────────────────────────────────
+   Las mismas palabras clave del análisis del TFM. El límite de palabra va
+   por delante para que "precio" no se dispare dentro de "apreciar".       */
+function compilarAspectos(){
+  const salida = {};
+  for (const [nombre, palabras] of Object.entries(CONFIG.aspectos)){
+    const trozos = palabras.map(p => {
+      const escapado = p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return `(?<![\\p{L}\\p{N}])${escapado}`;
+    });
+    salida[nombre] = new RegExp(trozos.join("|"), "iu");
+  }
+  return salida;
+}
+
+/* ── Estado de la aplicación ───────────────────────────────────────────*/
+let MODELO = null, MOTOR = null, DATOS = null, CABECERAS = [], ANALISIS = null;
+const $ = id => document.getElementById(id);
+const pct = v => `${v.toFixed(1)}%`;
+
+/* ── Arranque ──────────────────────────────────────────────────────────*/
+function aplicarConfig(){
+  document.title = CONFIG.titulo;
+  $("ui-titulo").textContent = CONFIG.titulo;
+  $("ui-subtitulo").textContent = CONFIG.subtitulo;
+  $("ui-autor").textContent = CONFIG.autor;
+  $("ui-pie").textContent = CONFIG.pie;
+  const r = document.documentElement.style;
+  r.setProperty("--azul",  CONFIG.colorPrincipal);
+  r.setProperty("--verde", CONFIG.colorBueno);
+  r.setProperty("--rojo",  CONFIG.colorMalo);
+}
+
+async function cargarModelo(){
+  try{
+    const r = await fetch("modelo_web.json");
+    if (!r.ok) throw new Error(r.status);
+    instalarModelo(await r.json());
+  }catch(e){
+    $("estado-modelo").textContent = "El modelo no se ha cargado automáticamente.";
+    $("punto-modelo").className = "punto mal";
+    $("carga-manual").classList.remove("oculto");
+  }
+}
+$("archivo-modelo").addEventListener("change", async ev => {
+  const f = ev.target.files[0]; if (!f) return;
+  try{ instalarModelo(JSON.parse(await f.text())); $("carga-manual").classList.add("oculto"); }
+  catch(err){ $("estado-modelo").textContent = "Ese archivo no es un modelo válido."; }
+});
+
+function instalarModelo(M){
+  MODELO = M; MOTOR = crearMotor(M);
+  $("punto-modelo").className = "punto ok";
+  $("estado-modelo").textContent =
+    `Modelo cargado · ${M.terminos.length.toLocaleString("es-ES")} términos`;
+  const m = M.metricas || {};
+  $("ficha-modelo").classList.remove("oculto");
+  $("ficha-modelo").innerHTML =
+    (m.exactitud ? `<span class="pastilla">Exactitud ${(m.exactitud*100).toFixed(1)}%</span>` : "") +
+    (m.f1        ? `<span class="pastilla">F1 ${m.f1.toFixed(3)}</span>` : "") +
+    (m.auc       ? `<span class="pastilla">AUC ${m.auc.toFixed(3)}</span>` : "") +
+    (m.n_entrenamiento ? `<span class="pastilla">Entrenado con ${m.n_entrenamiento.toLocaleString("es-ES")} reseñas</span>` : "") +
+    (M.version   ? `<span class="pastilla">Versión ${M.version}</span>` : "");
+}
+
+/* ── Carga del CSV ─────────────────────────────────────────────────────*/
+const zona = $("zona");
+zona.addEventListener("click", () => $("archivo-csv").click());
+zona.addEventListener("dragover", e => { e.preventDefault(); zona.classList.add("encima"); });
+zona.addEventListener("dragleave", () => zona.classList.remove("encima"));
+zona.addEventListener("drop", e => {
+  e.preventDefault(); zona.classList.remove("encima");
+  if (e.dataTransfer.files[0]) procesarArchivo(e.dataTransfer.files[0]);
+});
+$("archivo-csv").addEventListener("change", e => {
+  if (e.target.files[0]) procesarArchivo(e.target.files[0]);
+});
+
+async function procesarArchivo(archivo){
+  const err = $("error-csv"); err.classList.add("oculto");
+  try{
+    const {cabeceras, datos} = leerCSV(await archivo.text());
+    if (!datos.length) throw new Error("El archivo no tiene filas de datos.");
+    CABECERAS = cabeceras; DATOS = datos;
+    zona.innerHTML = `<b>${archivo.name}</b><br><span style="font-size:13px">` +
+      `${datos.length.toLocaleString("es-ES")} filas · ${cabeceras.length} columnas ` +
+      `— haz clic para cambiar de archivo</span>`;
+    prepararMapeo();
+  }catch(e){
+    err.textContent = "No se ha podido leer el archivo: " + e.message;
+    err.classList.remove("oculto");
+  }
+}
+
+function prepararMapeo(){
+  const opciones = (sel, incluirVacio) => {
+    sel.innerHTML = incluirVacio ? '<option value="">— ninguna —</option>' : "";
+    CABECERAS.forEach(h => {
+      const o = document.createElement("option"); o.value = h; o.textContent = h;
+      sel.appendChild(o);
+    });
+  };
+  opciones($("col-texto"), false);
+  opciones($("col-industria"), true);
+  opciones($("col-puntuacion"), true);
+  $("col-texto").value      = adivinar(["review_body","texto","text","reseña","resena","comentario","comment","opinion","body"]) || columnaMasLarga();
+  $("col-industria").value  = adivinar(["product_category","industria","categoria","category","sector","tipo"]) || "";
+  $("col-puntuacion").value = adivinar(["stars","estrellas","puntuacion","puntuación","rating","score","nota"]) || "";
+  $("mapeo").classList.remove("oculto");
+  $("resumen-csv").textContent = `${DATOS.length.toLocaleString("es-ES")} reseñas listas`;
+}
+function adivinar(candidatas){
+  const normal = s => s.toLowerCase().replace(/[\s_-]/g,"");
+  for (const c of candidatas){
+    const encontrada = CABECERAS.find(h => normal(h) === normal(c));
+    if (encontrada) return encontrada;
+  }
+  return null;
+}
+function columnaMasLarga(){
+  const muestra = DATOS.slice(0, 200);
+  let mejor = CABECERAS[0], max = -1;
+  for (const h of CABECERAS){
+    const media = muestra.reduce((a,f) => a + String(f[h]||"").length, 0) / muestra.length;
+    if (media > max){ max = media; mejor = h; }
+  }
+  return mejor;
+}
+
+/* ── Análisis ──────────────────────────────────────────────────────────*/
+$("btn-analizar").addEventListener("click", () => {
+  if (!MOTOR) return alert("Primero hay que cargar el modelo.");
+  const btn = $("btn-analizar");
+  btn.disabled = true; btn.textContent = "Analizando…";
+  setTimeout(() => { try{ analizar(); } finally {
+    btn.disabled = false; btn.textContent = "Analizar";
+  }}, 30);
+});
+
+function analizar(){
+  const colTexto = $("col-texto").value;
+  const colInd   = $("col-industria").value;
+  const colPunt  = $("col-puntuacion").value;
+  const ASPECTOS = compilarAspectos();
+
+  const filas = [];
+  for (const f of DATOS){
+    const texto = String(f[colTexto] ?? "").trim();
+    if (texto.length <= 2) continue;               // mismo criterio que el notebook
+    const minuscula = texto.toLowerCase();
+    filas.push({
+      texto, minuscula,
+      satisfecho: MOTOR.predecir(minuscula),
+      industria: colInd ? String(f[colInd] ?? "").trim() || "(sin categoría)" : null,
+      puntuacion: colPunt ? parseFloat(f[colPunt]) : null,
+    });
+  }
+  if (!filas.length){
+    const err = $("error-csv");
+    err.textContent = "Ninguna fila tiene texto suficiente en la columna elegida. ¿Es la correcta?";
+    err.classList.remove("oculto");
+    return;
+  }
+
+  const minimo = Math.max(CONFIG.minimoMenciones, Math.round(filas.length * 0.01));
+  const aspectos = [];
+  for (const [nombre, regex] of Object.entries(ASPECTOS)){
+    const mencionan = filas.filter(f => regex.test(f.minuscula));
+    if (mencionan.length < minimo) continue;
+    aspectos.push({
+      nombre,
+      menciones: mencionan.length,
+      cuota: mencionan.length / filas.length * 100,
+      satisfaccion: mencionan.reduce((a,f)=>a+f.satisfecho,0) / mencionan.length * 100,
+    });
+  }
+  aspectos.sort((a,b) => b.satisfaccion - a.satisfaccion);
+
+  let industrias = [];
+  if (colInd){
+    const grupos = new Map();
+    for (const f of filas){
+      if (!grupos.has(f.industria)) grupos.set(f.industria, []);
+      grupos.get(f.industria).push(f);
+    }
+    for (const [nombre, g] of grupos){
+      if (g.length < minimo) continue;
+      industrias.push({
+        nombre, n: g.length,
+        satisfaccion: g.reduce((a,f)=>a+f.satisfecho,0)/g.length*100,
+        filas: g,
+      });
+    }
+    industrias.sort((a,b)=>b.satisfaccion-a.satisfaccion);
+  }
+
+  ANALISIS = {filas, aspectos, industrias, minimo, ASPECTOS,
+              satisfaccion: filas.reduce((a,f)=>a+f.satisfecho,0)/filas.length*100};
+  pintar();
+}
+
+/* ── Pintado ───────────────────────────────────────────────────────────*/
+function pintar(){
+  const A = ANALISIS;
+  $("resultados").classList.remove("oculto");
+
+  $("kpi-n").textContent = A.filas.length.toLocaleString("es-ES");
+  const descartadas = DATOS.length - A.filas.length;
+  $("kpi-n-nota").textContent = descartadas > 0
+    ? `${descartadas.toLocaleString("es-ES")} sin texto suficiente, descartadas` : "";
+
+  const color = A.satisfaccion >= CONFIG.umbralVerde ? "var(--verde)"
+              : A.satisfaccion <= CONFIG.umbralRojo  ? "var(--rojo)" : "var(--ambar)";
+  $("kpi-sat").textContent = pct(A.satisfaccion);
+  $("kpi-sat").style.color = color;
+  $("kpi-sat-nota").textContent = "según el modelo, no según las estrellas";
+  $("kpi-asp").textContent = A.aspectos.length;
+
+  // Si hay pocos aspectos, se reparten sin repetir ninguno en los dos paneles.
+  const n = CONFIG.topAspectos;
+  const corte = Math.max(n, A.aspectos.length - n);
+  pintarBarras($("fortalezas"),  A.aspectos.slice(0, n), "var(--verde)");
+  pintarBarras($("debilidades"), A.aspectos.slice(corte).reverse(), "var(--rojo)");
+
+  $("tabla-aspectos").innerHTML = A.aspectos.map(a => `
+    <tr><td>${escapar(a.nombre)}</td>
+        <td class="num">${a.menciones.toLocaleString("es-ES")}</td>
+        <td class="num">${a.cuota.toFixed(1)}%</td>
+        <td class="num">${a.satisfaccion.toFixed(1)}%</td></tr>`).join("");
+
+  if (A.industrias.length >= 2){
+    $("bloque-industria").classList.remove("oculto");
+    pintarBarras($("industrias"), A.industrias.slice(0, 12).map(i => ({
+      nombre: i.nombre, satisfaccion: i.satisfaccion, menciones: i.n,
+    })), "var(--azul)");
+    pintarMapa();
+  } else {
+    $("bloque-industria").classList.add("oculto");
+    $("bloque-mapa").classList.add("oculto");
+  }
+}
+
+function pintarBarras(contenedor, lista, color){
+  if (!lista.length){ contenedor.innerHTML =
+    '<p class="leyenda">No hay aspectos con menciones suficientes.</p>'; return; }
+  contenedor.innerHTML = lista.map(a => `
+    <div class="barra-fila" title="${escapar(a.nombre)}: ${a.menciones.toLocaleString("es-ES")} reseñas">
+      <span class="nombre">${escapar(a.nombre)}</span>
+      <span class="pista"><span class="relleno" style="width:${a.satisfaccion.toFixed(1)}%;background:${color}"></span></span>
+      <span class="cifra">${Math.round(a.satisfaccion)}%</span>
+    </div>`).join("") +
+    `<p class="leyenda">Pasa el ratón por encima para ver cuántas reseñas hay detrás de cada barra.</p>`;
+}
+
+function pintarMapa(){
+  const A = ANALISIS;
+  const industrias = A.industrias.slice(0, 8);
+  const nombres = A.aspectos.map(a => a.nombre);
+  if (industrias.length < 2 || !nombres.length){
+    $("bloque-mapa").classList.add("oculto"); return; }
+  $("bloque-mapa").classList.remove("oculto");
+
+  const celdas = industrias.map(ind => nombres.map(nombre => {
+    const regex = A.ASPECTOS[nombre];
+    const m = ind.filas.filter(f => regex.test(f.minuscula));
+    const minimo = Math.max(5, Math.round(ind.filas.length * 0.01));
+    if (m.length < minimo) return null;
+    return m.reduce((a,f)=>a+f.satisfecho,0)/m.length*100;
+  }));
+  const planas = celdas.flat().filter(v => v !== null);
+  const min = Math.min(...planas), max = Math.max(...planas);
+
+  const cabecera = `<thead><tr><th></th>${nombres.map(n =>
+    `<th style="text-align:center">${escapar(n)}</th>`).join("")}</tr></thead>`;
+  const cuerpo = industrias.map((ind, i) => `<tr>
+    <td style="white-space:nowrap">${escapar(ind.nombre)}
+      <span style="color:var(--text-3)"> · ${ind.n.toLocaleString("es-ES")}</span></td>
+    ${celdas[i].map(v => v === null
+      ? '<td class="celda" style="background:var(--surface-0);color:var(--text-3)">—</td>'
+      : `<td class="celda" style="background:${tono(v,min,max).fondo};color:${tono(v,min,max).tinta}">${Math.round(v)}</td>`).join("")}
+    </tr>`).join("");
+  $("tabla-mapa").innerHTML = cabecera + "<tbody>" + cuerpo + "</tbody>";
+}
+
+// Rampa secuencial de un solo tono: más oscuro = más satisfacción.
+// Sobre los tres tonos más claros la cifra se escribe en oscuro, para que se lea.
+function tono(v, min, max){
+  const t = max > min ? (v - min) / (max - min) : 0.5;
+  const pasos = ["#cde2fb","#9ec5f4","#6da7ec","#3987e5","#256abf","#184f95","#0d366b"];
+  const i = Math.min(pasos.length-1, Math.floor(t * pasos.length));
+  return {fondo: pasos[i], tinta: i <= 2 ? "#0b0b0b" : "#ffffff"};
+}
+
+const escapar = s => String(s).replace(/[&<>"]/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ── Descarga de resultados ────────────────────────────────────────────*/
+$("btn-descargar").addEventListener("click", () => {
+  if (!ANALISIS) return;
+  const cabecera = ["texto","satisfecho_modelo","industria","puntuacion"];
+  const lineas = [cabecera.join(",")];
+  for (const f of ANALISIS.filas){
+    lineas.push([
+      `"${f.texto.replace(/"/g,'""')}"`,
+      f.satisfecho,
+      f.industria ? `"${String(f.industria).replace(/"/g,'""')}"` : "",
+      f.puntuacion ?? "",
+    ].join(","));
+  }
+  const blob = new Blob(["﻿" + lineas.join("\n")], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "resultados_analisis.csv";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+/* ── Reseña suelta ─────────────────────────────────────────────────────*/
+$("btn-probar").addEventListener("click", () => {
+  if (!MOTOR) return alert("Primero hay que cargar el modelo.");
+  const texto = $("texto-prueba").value.trim();
+  if (!texto) return;
+  const p = MOTOR.probabilidad(texto.toLowerCase());
+  const satisfecho = p > 0.5;
+  const terminos = MOTOR.contribuciones(texto.toLowerCase(), 8);
+  const salida = $("salida-prueba");
+  salida.classList.remove("oculto");
+  salida.innerHTML = `
+    <div style="font-size:19px;font-weight:600;color:${satisfecho?"var(--verde)":"var(--rojo)"}">
+      ${satisfecho ? "Cliente satisfecho" : "Cliente insatisfecho"}
+      <span style="color:var(--text-3);font-weight:400;font-size:14px">
+        · confianza ${(Math.max(p,1-p)*100).toFixed(0)}%</span>
+    </div>
+    <p class="leyenda" style="margin:12px 0 8px">Términos que más han pesado en esta decisión:</p>
+    <div>${terminos.length ? terminos.map(t =>
+      `<span class="termino ${t.peso>0?"pos":"neg"}">${escapar(t.termino)}
+        <span class="p">${t.peso>0?"+":""}${t.peso.toFixed(3)}</span></span>`).join("")
+      : '<span class="leyenda">Ninguna palabra de esta reseña está en el vocabulario del modelo.</span>'}</div>`;
+});
+
+/* ── Verificación ──────────────────────────────────────────────────────*/
+$("btn-verificar").addEventListener("click", () => {
+  const salida = $("salida-verificacion");
+  if (!MODELO || !MODELO.control){
+    salida.innerHTML = '<p class="aviso">El modelo cargado no incluye muestra de control.</p>';
+    return;
+  }
+  let peor = 0;
+  const filas = MODELO.control.map(c => {
+    const aqui = MOTOR.puntuar(c.texto);
+    const dif = Math.abs(aqui - c.valor);
+    peor = Math.max(peor, dif);
+    return `<tr><td>${escapar(c.texto.slice(0,60))}…</td>
+      <td class="num">${c.valor.toFixed(6)}</td>
+      <td class="num">${aqui.toFixed(6)}</td>
+      <td class="num">${dif.toExponential(1)}</td></tr>`;
+  }).join("");
+  const ok = peor < 1e-4;
+  salida.innerHTML = `
+    <div class="aviso ${ok?"":"error"}" style="${ok?"background:color-mix(in srgb,var(--verde) 12%,var(--surface-1));border-color:color-mix(in srgb,var(--verde) 40%,transparent)":""}">
+      ${ok ? `Verificación superada. La mayor diferencia frente a Python es
+              ${peor.toExponential(1)}, atribuible al redondeo del archivo.
+              La herramienta usa el modelo entrenado, no una aproximación.`
+           : `Hay diferencias por encima de lo esperado (${peor.toExponential(1)}).`}
+    </div>
+    <div class="desplaza" style="margin-top:12px"><table><thead><tr><th>Reseña</th>
+      <th class="num">Python</th><th class="num">Esta página</th>
+      <th class="num">Diferencia</th></tr></thead><tbody>${filas}</tbody></table></div>`;
+});
+
+aplicarConfig();
+cargarModelo();
+</script>
+</body>
+</html>
